@@ -1,0 +1,80 @@
+﻿@using AutenticaPracticalTask.Properties
+@model AutenticaPracticalTask.Models.ExtremeLocationVM
+
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div id="map-container">
+    <div id="map"></div>
+    <div id="form-container">
+        <form>
+            <input type="text" id="city" />
+            <input class="btn btn-success" type="submit" id="submitButton" />
+        </form>
+    </div>
+    <div id="clear-container">
+        <input type="submit" id="clear" class="btn btn-danger" value="@Resources.ClearMarkers">
+    </div>
+</div>
+
+<div id="error""></div>
+
+<script>
+    $(document).ready(function () {
+        setupMap();
+
+        $("#clear").on("click", function() {
+            clearMarkers();
+        });
+
+        $("form").submit(function (event) {
+            event.preventDefault();
+            $("#error").text("");
+
+            var city = $("#city").val();
+            $.ajax({
+                url: "@Url.Action("GetLocation", "Location")",
+                type: "GET",
+                data: { cityName: city },
+                success: function (response) {
+                    $('#city').val('');
+                    if (!response.error){
+                        var name = response.name;
+                        var latitude = response.latitude;
+                        var longitude = response.longitude;
+
+                        setMarker(name, longitude, latitude, true);
+                    }
+                    else {
+                        $("#error").text(response.error);
+                    }
+                }
+            });
+        });
+    });
+
+    function setupMap(){
+        @{
+            foreach(var item in Model.Locations){
+                <text>setMarker("@item.Name - @item.Description", @item.Longitude, @item.Latitude, false);</text>
+            }
+        }
+    }
+
+    function clearMarkers(){
+        for (var i = 0; i < markers.length; i++) {
+            map.removeLayer(markers[i]);
+        }
+    }
+
+    function setMarker(title, longitude, latitude, panTo){
+        var marker = L.marker([longitude, latitude]).addTo(map).addTo(L.layerGroup());
+        marker.bindTooltip(title, { permanent: true, offset: [0, 12] });
+        markers.push(marker);
+
+        if (panTo){
+            map.flyTo([longitude, latitude], 10);
+        }
+    }
+</script>
